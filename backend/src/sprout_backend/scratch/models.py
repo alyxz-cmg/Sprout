@@ -33,3 +33,12 @@ class ScratchTarget(BaseModel):
     # In some rare cases, Scratch represents top-level variable reporters as lists.
     # We use a Union to safely catch those without crashing the parser.
     blocks: Dict[str, Union[ScratchBlock, list]] = Field(default_factory=dict)
+
+class ScratchProject(BaseModel):
+    """
+    The root schema for a Scratch 3.0 project.json file.
+    """
+    model_config = ConfigDict(extra="ignore")
+    
+    targets: List[ScratchTarget]
+    meta: Dict[str, Any] = Field(default_factory=dict)
