@@ -82,7 +82,7 @@ class ProjectTranslator:
         """Sanitizes Scratch variable or custom block names to valid Python identifiers."""
         clean = re.sub(r'\W|^(?=\d)', '_', name)
         return clean.lower()
-    
+
     def _evaluate_reporter(self, block_id: str) -> str:
         """Recursively evaluates Operator, Sensing, and Variable blocks into Python expressions."""
         if block_id not in self.blocks:
