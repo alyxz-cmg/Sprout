@@ -15,3 +15,21 @@ class ScratchBlock(BaseModel):
     fields: Dict[str, Any] = Field(default_factory=dict)
     shadow: bool = False
     topLevel: bool = False
+
+class ScratchTarget(BaseModel):
+    """
+    Represents a Sprite or the Stage in a Scratch project.
+    Contains the blocks, variables, and lists specific to that target.
+    """
+    model_config = ConfigDict(extra="ignore")
+    
+    isStage: bool
+    name: str
+    # Variables and lists in Scratch are represented as [name, value] or [name, value, isCloud]
+    variables: Dict[str, list] = Field(default_factory=dict)
+    lists: Dict[str, list] = Field(default_factory=dict)
+    broadcasts: Dict[str, str] = Field(default_factory=dict)
+    
+    # In some rare cases, Scratch represents top-level variable reporters as lists.
+    # We use a Union to safely catch those without crashing the parser.
+    blocks: Dict[str, Union[ScratchBlock, list]] = Field(default_factory=dict)
