@@ -1,0 +1,10 @@
+# Web Framework & Server
+fastapi>=0.110.0
+uvicorn>=0.29.0
+python-multipart>=0.0.9
+
+# Data Validation & Schemas
+pydantic>=2.7.0
+
+# AI Client
+openai>=1.40.0
