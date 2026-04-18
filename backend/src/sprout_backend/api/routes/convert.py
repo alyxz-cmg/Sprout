@@ -39,6 +39,9 @@ async def convert_sb3(file: UploadFile = File(...)):
     except SproutBaseException as e:
     # Catch our domain-specific exceptions and return clean 400s
         raise HTTPException(status_code=400, detail=e.message)
+    
     except Exception as e:
-    # Catch unforeseen errors
+        print(f"CRITICAL ERROR: {str(e)}") 
+        
+        # Catch unforeseen errors
         raise HTTPException(status_code=500, detail="Something went wrong while processing your project.")
