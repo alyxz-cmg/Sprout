@@ -98,9 +98,16 @@ class ProjectTranslator:
         # If it's a list, it's a literal value (e.g., [4, "10"], [10, "hello"])
         if isinstance(val_data, list) and len(val_data) > 1:
             val = str(val_data[1])
-            # Quote strings, leave numbers
-            if not val.replace('.', '', 1).isdigit() and not val.startswith(('sprite.', 'var_')):
+
+            is_numeric = val.replace('.', '', 1).isdigit()
+            
+            is_identifier = val.startswith(('sprite.', 'var_', 'list_', 'arg_'))
+            
+            is_boolean = val.lower() in ('true', 'false')
+
+            if not (is_numeric or is_identifier or is_boolean):
                 return f'"{val}"'
+                
             return val
             
         return default
@@ -189,7 +196,8 @@ class ProjectTranslator:
             return self._sanitize_name(self._get_field(block, 'VALUE'))
 
         self.emitter.add_warning(f"Approximated reporter block: {opcode}")
-        return f"None # {opcode}"
+        # Return clean None so it doesn't break the caller's parentheses
+        return "None"
 
     def _translate_block(self, block_id: str, block: ScratchBlock):
         opcode = block.opcode
