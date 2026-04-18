@@ -1,6 +1,6 @@
 export default function Footer() {
   return (
-    <footer className="bg-white/80 backdrop-blur-md text-gray-400 p-6 text-sm mt-auto border-t border-gray-100">
+    <footer className="bg-transparent text-gray-500/80 p-8 text-sm">
       <div className="container mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
         
         {/* Left Aligned: Copyright */}
