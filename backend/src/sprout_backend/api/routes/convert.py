@@ -19,12 +19,20 @@ async def convert_sb3(file: UploadFile = File(...)):
         # Read the file into memory
         file_bytes = await file.read()
 
-        # Phase 1: Load and parse
         project = load_sb3_from_bytes(file_bytes)
 
-        # Phase 2: Transpile
         translator = ProjectTranslator(project)
         result = translator.translate()
+
+        raw_warnings = result.get("warnings", [])
+        formatted_warnings = []
+        for w in raw_warnings:
+            if isinstance(w, dict):
+                msg = w.get("message", "Unknown error")
+                bid = w.get("block_id", "unknown")
+                formatted_warnings.append(f"{msg} (Block: {bid})")
+            else:
+                formatted_warnings.append(str(w))
 
         # Default project name fallback
         project_name = file.filename.replace('.sb3', '')
@@ -33,15 +41,13 @@ async def convert_sb3(file: UploadFile = File(...)):
             project_name=project_name,
             python_code=result["python_code"],
             mappings=result["mappings"],
-            warnings=result["warnings"]
+            warnings=formatted_warnings
         )
     
     except SproutBaseException as e:
-    # Catch our domain-specific exceptions and return clean 400s
+        # Catch our domain-specific exceptions and return clean 400s
         raise HTTPException(status_code=400, detail=e.message)
     
     except Exception as e:
         print(f"CRITICAL ERROR: {str(e)}") 
-        
-        # Catch unforeseen errors
         raise HTTPException(status_code=500, detail="Something went wrong while processing your project.")
