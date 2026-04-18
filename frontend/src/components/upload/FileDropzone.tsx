@@ -1,4 +1,5 @@
 import React from "react";
+import sproutCat from "../../assets/sprout-cat.png";
 
 interface FileDropzoneProps {
   onFileSelect: (file: File) => void;
@@ -17,7 +18,14 @@ export function FileDropzone({ onFileSelect, disabled = false }: FileDropzonePro
     <div className={`text-center p-12 border-4 border-dashed rounded-3xl transition-colors ${
       disabled ? "border-slate-200 bg-slate-50 cursor-not-allowed" : "border-green-300 bg-green-50 hover:bg-green-100 cursor-pointer"
     }`}>
-      <div className="text-6xl mb-4">🐈</div>
+      <div className="flex justify-center mb-4">
+        <img 
+          src={sproutCat} 
+          alt="Sprout Cat Mascot" 
+          className={`w-48 h-48 object-contain ${disabled ? "grayscale opacity-50" : ""}`}
+        />
+      </div>
+      
       <h2 className="text-2xl font-extrabold text-green-800 mb-2">Upload your Scratch Game!</h2>
       <p className="text-green-600 mb-6 font-medium">Drop your .sb3 file here, or click to browse.</p>
       
