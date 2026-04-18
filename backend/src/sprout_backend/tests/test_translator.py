@@ -22,6 +22,7 @@ def make_block(
     opcode,
     inputs=None,
     fields=None,
+    mutation=None,
 ):
     return ScratchBlock(
         id=block_id,
@@ -30,6 +31,7 @@ def make_block(
         parent=None,
         inputs=inputs or {},
         fields=fields or {},
+        mutation=mutation or {},
         shadow=False,
         topLevel=True,
     )
@@ -166,3 +168,103 @@ def test_variable_set_translation():
     code = result["python_code"]
 
     assert "var_score = 42" in code
+
+
+def test_menu_backed_input_resolves_to_literal():
+    sound_menu = make_block(
+        "menu1",
+        "sound_sounds_menu",
+        fields={"SOUND_MENU": ["Meow", None]},
+    )
+    play_sound = make_block(
+        "b1",
+        "sound_play",
+        inputs={"SOUND_MENU": [1, "menu1"]},
+    )
+
+    target = DummyTarget("Sprite1", False, {"b1": play_sound, "menu1": sound_menu})
+    project = ScratchProject(targets=[target], meta={})
+
+    translator = ProjectTranslator(project)
+    result = translator.translate()
+
+    assert 'sprite.sound.play("Meow")' in result["python_code"]
+    assert len(result["warnings"]) == 0
+
+
+def test_control_stop_uses_stop_option_field():
+    block = make_block(
+        "b1",
+        "control_stop",
+        fields={"STOP_OPTION": ["all", None]},
+    )
+
+    target = DummyTarget("Sprite1", False, {"b1": block})
+    project = ScratchProject(targets=[target], meta={})
+
+    translator = ProjectTranslator(project)
+    result = translator.translate()
+
+    assert "raise SystemExit()" in result["python_code"]
+    assert any("Stop block 'all'" in warning for warning in result["warnings"])
+
+
+def test_broadcast_and_wait_avoids_invalid_await_in_sync_code():
+    menu = make_block(
+        "menu1",
+        "event_broadcast_menu",
+        fields={"BROADCAST_OPTION": ["game over", None]},
+    )
+    block = make_block(
+        "b1",
+        "event_broadcastandwait",
+        inputs={"BROADCAST_INPUT": [1, "menu1"]},
+    )
+
+    target = DummyTarget("Sprite1", False, {"b1": block, "menu1": menu})
+    project = ScratchProject(targets=[target], meta={})
+
+    translator = ProjectTranslator(project)
+    result = translator.translate()
+
+    assert 'sprite.events.broadcast_and_wait("game over")' in result["python_code"]
+    assert "await " not in result["python_code"]
+    assert any("Broadcast-and-wait" in warning for warning in result["warnings"])
+
+
+def test_procedure_call_uses_block_mutation_metadata():
+    block = make_block(
+        "b1",
+        "procedures_call",
+        inputs={"input0": [1, [4, "7"]]},
+        mutation={"proccode": "jump %n"},
+    )
+
+    target = DummyTarget("Sprite1", False, {"b1": block})
+    project = ScratchProject(targets=[target], meta={})
+
+    translator = ProjectTranslator(project)
+    result = translator.translate()
+
+    assert "jump(7)" in result["python_code"]
+
+
+def test_procedure_definition_uses_prototype_mutation_metadata():
+    definition = make_block(
+        "def1",
+        "procedures_definition",
+        inputs={"custom_block": [1, "proto1"]},
+    )
+    prototype = make_block(
+        "proto1",
+        "procedures_prototype",
+        mutation={"proccode": "jump %n", "argumentids": "[\"arg1\"]"},
+    )
+
+    target = DummyTarget("Sprite1", False, {"def1": definition, "proto1": prototype})
+    project = ScratchProject(targets=[target], meta={})
+
+    translator = ProjectTranslator(project)
+    result = translator.translate()
+
+    assert "def jump(arg_0):" in result["python_code"]

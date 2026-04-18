@@ -1,3 +1,4 @@
+import json
 import re
 from typing import Dict, Union, Any, Tuple
 from ..scratch.models import ScratchProject, ScratchBlock
@@ -113,6 +114,21 @@ class ProjectTranslator:
             
         return default
 
+    def _quote_literal(self, value: Any) -> str:
+        text = str(value)
+
+        if re.fullmatch(r"-?\d+(\.\d+)?", text):
+            return text
+
+        if text.lower() in ("true", "false"):
+            return text
+
+        if text.startswith(("sprite.", "stage.", "var_", "list_", "arg_")):
+            return text
+
+        escaped = text.replace("\\", "\\\\").replace('"', '\\"')
+        return f'"{escaped}"'
+
     def _get_field(self, block: ScratchBlock, field_name: str, default: str = "") -> str:
         """Extracts field selections (e.g., dropdown menus)."""
         if field_name in block.fields:
@@ -135,6 +151,31 @@ class ProjectTranslator:
             return f"var_{self._sanitize_name(str(block[1]))}" if isinstance(block, list) else "None"
             
         opcode = block.opcode
+
+        # --- MENUS / SHADOW REPORTERS ---
+        if opcode in {
+            "event_broadcast_menu",
+            "looks_backdrops",
+            "looks_costume",
+            "motion_goto_menu",
+            "motion_glideto_menu",
+            "control_create_clone_of_menu",
+            "sensing_touchingobjectmenu",
+            "sensing_distancetomenu",
+            "sound_sounds_menu",
+        }:
+            field_name_by_opcode = {
+                "event_broadcast_menu": "BROADCAST_OPTION",
+                "looks_backdrops": "BACKDROP",
+                "looks_costume": "COSTUME",
+                "motion_goto_menu": "TO",
+                "motion_glideto_menu": "TO",
+                "control_create_clone_of_menu": "CLONE_OPTION",
+                "sensing_touchingobjectmenu": "TOUCHINGOBJECTMENU",
+                "sensing_distancetomenu": "DISTANCETOMENU",
+                "sound_sounds_menu": "SOUND_MENU",
+            }
+            return self._quote_literal(self._get_field(block, field_name_by_opcode[opcode]))
 
         # --- OPERATORS ---
         if opcode == "operator_add":
@@ -201,6 +242,22 @@ class ProjectTranslator:
             return "sprite.sensing.timer()"
         elif opcode == "sensing_answer":
             return "sprite.sensing.answer"
+        elif opcode == "sensing_keypressed":
+            return f"sprite.sensing.key_pressed({self._resolve_input(block, 'KEY_OPTION')})"
+        elif opcode == "sensing_touchingcolor":
+            return f"sprite.sensing.touching_color({self._resolve_input(block, 'COLOR')})"
+        elif opcode == "sensing_coloristouchingcolor":
+            return f"sprite.sensing.color_touching_color({self._resolve_input(block, 'COLOR')}, {self._resolve_input(block, 'COLOR2')})"
+        elif opcode == "sensing_distanceto":
+            return f"sprite.sensing.distance_to({self._resolve_input(block, 'DISTANCETOMENU')})"
+        elif opcode == "sensing_loudness":
+            return "sprite.sensing.loudness()"
+        elif opcode == "sensing_dayssince2000":
+            return "sprite.sensing.days_since_2000()"
+        elif opcode == "sensing_current":
+            return f"sprite.sensing.current('{self._get_field(block, 'CURRENTMENU')}')"
+        elif opcode == "sensing_username":
+            return "sprite.sensing.username"
 
         # --- VARIABLES & LISTS & MOTION REPORTERS ---
         elif opcode == "data_variable":
@@ -254,7 +311,8 @@ class ProjectTranslator:
             self.emitter.emit_line(f"sprite.events.broadcast({msg})", block_id, opcode)
         elif opcode == "event_broadcastandwait":
             msg = self._resolve_input(block, "BROADCAST_INPUT", '""')
-            self.emitter.emit_line(f"await sprite.events.broadcast_and_wait({msg})", block_id, opcode, "Requires async logic in Python")
+            self.emitter.emit_line(f"sprite.events.broadcast_and_wait({msg})", block_id, opcode, "Approximated as a synchronous runtime call.")
+            self.emitter.add_warning("Broadcast-and-wait is approximated as a synchronous call.")
 
         # ==========================================
         # 2. CONTROL
@@ -290,8 +348,18 @@ class ProjectTranslator:
             self.emitter.emit_line("time.sleep(0.01) # Yield to event loop", block_id, opcode)
             self.emitter.dedent()
         elif opcode == "control_stop":
-            self.emitter.emit_line("return # Stops the current script", block_id, opcode)
-            self.emitter.add_warning("Stop blocks are approximated as 'return'.")
+            stop_option = self._get_field(block, "STOP_OPTION", "this script")
+            normalized_stop_option = stop_option.lower()
+
+            if normalized_stop_option == "all":
+                self.emitter.emit_line("raise SystemExit()", block_id, opcode)
+                self.emitter.add_warning("Stop block 'all' is approximated as SystemExit.")
+            elif normalized_stop_option == "other scripts in sprite":
+                self.emitter.emit_line("# TODO: stop other scripts in sprite not implemented", block_id, opcode)
+                self.emitter.add_warning("Stop block 'other scripts in sprite' is not implemented yet.")
+            else:
+                self.emitter.emit_line("return", block_id, opcode)
+                self.emitter.add_warning("Stop block 'this script' is approximated as return.")
         elif opcode == "control_create_clone_of":
             target = self._resolve_input(block, "CLONE_OPTION", '"_myself_"')
             self.emitter.emit_line(f"sprite.control.create_clone({target})", block_id, opcode)
@@ -301,11 +369,6 @@ class ProjectTranslator:
             self.emitter.indent()
         elif opcode == "control_delete_this_clone":
             self.emitter.emit_line("sprite.control.delete_clone()", block_id, opcode)
-        elif opcode == "control_stopall":
-            self.emitter.emit_line("raise SystemExit()", block_id, opcode)
-        elif opcode == "control_stopthisscript":
-            self.emitter.emit_line("return", block_id, opcode)
-
         elif opcode == "control_stopotherscripts":
             self.emitter.emit_line("# TODO: stop other scripts not implemented", block_id, opcode)
         
@@ -394,23 +457,6 @@ class ProjectTranslator:
             self.emitter.emit_line(f"sprite.sensing.ask_and_wait({self._resolve_input(block, 'QUESTION')})", block_id, opcode)
         elif opcode == "sensing_resettimer":
             self.emitter.emit_line("sprite.sensing.reset_timer()", block_id, opcode)
-        elif opcode == "sensing_keypressed":
-            return f"sprite.sensing.key_pressed({self._resolve_input(block, 'KEY_OPTION')})"
-        elif opcode == "sensing_touchingcolor":
-            return f"sprite.sensing.touching_color({self._resolve_input(block, 'COLOR')})"
-        elif opcode == "sensing_coloristouchingcolor":
-            return f"sprite.sensing.color_touching_color({self._resolve_input(block, 'COLOR')}, {self._resolve_input(block, 'COLOR2')})"
-        elif opcode == "sensing_distanceto":
-            return f"sprite.sensing.distance_to({self._resolve_input(block, 'DISTANCETOMENU')})"
-        elif opcode == "sensing_loudness":
-            return "sprite.sensing.loudness()"
-        elif opcode == "sensing_dayssince2000":
-            return "sprite.sensing.days_since_2000()"
-        elif opcode == "sensing_current":
-            return f"sprite.sensing.current('{self._get_field(block, 'CURRENTMENU')}')"
-        elif opcode == "sensing_username":
-            return "sprite.sensing.username"
-        
         # ==========================================
         # 7. VARIABLES & LISTS
         # ==========================================
@@ -460,18 +506,22 @@ class ProjectTranslator:
             custom_block_id = block.inputs.get("custom_block", [])[1]
             if isinstance(custom_block_id, str) and custom_block_id in self.blocks:
                 prototype = self.blocks[custom_block_id]
+                if not isinstance(prototype, ScratchBlock):
+                    self.emitter.add_warning("Invalid procedures prototype encountered.")
+                    return
+
+                mutation = prototype.mutation or {}
                 # 'proccode' contains the Scratch signature, e.g., "jump %s %n"
-                proc_code = prototype.inputs.get("proccode", ["", "custom_function"])[1]
+                proc_code = mutation.get("proccode", "custom_function")
                 # We sanitize the first word to use as the function name
                 func_name = self._sanitize_name(str(proc_code).split()[0])
                 
                 # Get arguments if they exist
-                args = prototype.inputs.get("argumentids", ["", "[]"])[1]
-                import json
+                args = mutation.get("argumentids", "[]")
                 try:
                     arg_list = json.loads(str(args))
                     arg_str = ", ".join([f"arg_{i}" for i in range(len(arg_list))])
-                except:
+                except Exception:
                     arg_str = ""
                     
                 self.emitter.emit_line(f"def {func_name}({arg_str}):", block_id, opcode)
@@ -479,8 +529,8 @@ class ProjectTranslator:
                 
         elif opcode == "procedures_call":
             # The mutation object stores the proccode for calls
-            mutation = block.inputs.get("mutation", {})
-            proccode = mutation.get("proccode", "custom_function") if isinstance(mutation, dict) else str(mutation)
+            mutation = block.mutation or {}
+            proccode = mutation.get("proccode", "custom_function")
             func_name = self._sanitize_name(proccode.split()[0])
             
             # Extract arguments being passed

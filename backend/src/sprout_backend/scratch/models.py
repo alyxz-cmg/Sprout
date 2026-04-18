@@ -13,6 +13,7 @@ class ScratchBlock(BaseModel):
     parent: Optional[str] = None
     inputs: Dict[str, Any] = Field(default_factory=dict)
     fields: Dict[str, Any] = Field(default_factory=dict)
+    mutation: Dict[str, Any] = Field(default_factory=dict)
     shadow: bool = False
     topLevel: bool = False
 
