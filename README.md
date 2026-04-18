@@ -76,3 +76,16 @@ Unlike simple one-to-one mapping tools, Sprout utilizes a **Dual-Engine Architec
 1. `cd frontend`
 2. `pnpm install`
 3. `pnpm dev`
+
+---
+
+## 📸 Screenshots
+
+### Home Screen
+![Home Screen](./frontend/src/assets/home_screen.png)
+
+### Explanation Panel
+![Panel](./frontend/src/assets/panel.png)
+
+### Interactive Dictionary
+![Dictionary](./frontend/src/assets/dict.png)
