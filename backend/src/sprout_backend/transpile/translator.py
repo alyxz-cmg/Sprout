@@ -228,6 +228,10 @@ class ProjectTranslator:
             }
 
             return mapping.get(op, val)
+        elif opcode == "operator_letter_of":
+            return f"str({self._resolve_input(block, 'STRING')})[{self._resolve_input(block, 'LETTER')} - 1]"
+        elif opcode == "operator_contains":
+            return f"({self._resolve_input(block, 'STRING2')} in {self._resolve_input(block, 'STRING1')})"
         
         # --- SENSING ---
         elif opcode == "sensing_touchingobject":
@@ -258,6 +262,10 @@ class ProjectTranslator:
             return f"sprite.sensing.current('{self._get_field(block, 'CURRENTMENU')}')"
         elif opcode == "sensing_username":
             return "sprite.sensing.username"
+        elif opcode == "sensing_of":
+            prop = self._get_field(block, "PROPERTY")
+            obj = self._get_field(block, "OBJECT")
+            return f"sprite.sensing.attribute_of('{prop}', '{obj}')"
 
         # --- VARIABLES & LISTS & MOTION REPORTERS ---
         elif opcode == "data_variable":
@@ -266,13 +274,18 @@ class ProjectTranslator:
             return f"list_{self._sanitize_name(self._get_field(block, 'LIST'))}[{self._resolve_input(block, 'INDEX')} - 1]"
         elif opcode == "data_lengthoflist":
             return f"len(list_{self._sanitize_name(self._get_field(block, 'LIST'))})"
-        
         elif opcode == "motion_xposition":
             return "sprite.x"
         elif opcode == "motion_yposition":
             return "sprite.y"
         elif opcode == "motion_direction":
             return "sprite.direction"
+        elif opcode == "looks_costumenumbername":
+            return f"sprite.looks.costume('{self._get_field(block, 'NUMBER_NAME', 'number')}')"
+        elif opcode == "looks_backdropnumbername":
+            return f"stage.looks.backdrop('{self._get_field(block, 'NUMBER_NAME', 'number')}')"
+        elif opcode == "looks_size":
+            return "sprite.size"
             
         # --- MY BLOCKS ARGUMENTS ---
         elif opcode in ["argument_reporter_string_number", "argument_reporter_boolean"]:
@@ -313,6 +326,17 @@ class ProjectTranslator:
             msg = self._resolve_input(block, "BROADCAST_INPUT", '""')
             self.emitter.emit_line(f"sprite.events.broadcast_and_wait({msg})", block_id, opcode, "Approximated as a synchronous runtime call.")
             self.emitter.add_warning("Broadcast-and-wait is approximated as a synchronous call.")
+        elif opcode == "event_whenbackdropswitchesto":
+            backdrop = self._get_field(block, "BACKDROP")
+            self.emitter.emit_line(f"@event.on_backdrop_switched('{backdrop}')", block_id, opcode)
+            self.emitter.emit_line(f"def backdrop_switched_{self._sanitize_name(backdrop)}():", block_id, opcode)
+            self.emitter.indent()
+        elif opcode == "event_whengreaterthan":
+            prop = self._get_field(block, "WHENGREATERTHANMENU")
+            val = self._resolve_input(block, "VALUE")
+            self.emitter.emit_line(f"@event.on_greater_than('{prop}', {val})", block_id, opcode)
+            self.emitter.emit_line(f"def greater_than_{self._sanitize_name(prop)}():", block_id, opcode)
+            self.emitter.indent()
 
         # ==========================================
         # 2. CONTROL
@@ -403,6 +427,12 @@ class ProjectTranslator:
         elif opcode == "motion_setrotationstyle":
             style = self._quote_literal(self._get_field(block, "STYLE", "all around"))
             self.emitter.emit_line(f"sprite.rotation_style = {style}", block_id, opcode)
+        elif opcode == "motion_glideto":
+            target = self._resolve_input(block, "TO", '"_random_"')
+            self.emitter.emit_line(f"sprite.motion.glide_to(target={target})", block_id, opcode)
+        elif opcode == "motion_pointtowards":
+            target = self._resolve_input(block, "TOWARDS", '"_mouse_"')
+            self.emitter.emit_line(f"sprite.motion.point_towards({target})", block_id, opcode)
 
         # ==========================================
         # 4. LOOKS
@@ -441,6 +471,14 @@ class ProjectTranslator:
             effect = self._get_field(block, "EFFECT")
             val = self._resolve_input(block, "VALUE")
             self.emitter.emit_line(f"sprite.looks.set_effect('{effect}', {val})", block_id, opcode)
+        elif opcode == "looks_setsizeto":
+            self.emitter.emit_line(f"sprite.size = {self._resolve_input(block, 'SIZE')}", block_id, opcode)
+        elif opcode == "looks_gotofrontback":
+            layer = self._get_field(block, "FRONT_BACK", "front")
+            self.emitter.emit_line(f"sprite.looks.go_to_layer('{layer}')", block_id, opcode)
+        elif opcode == "looks_goforwardbackwardlayers":
+            direction = self._get_field(block, "FORWARD_BACKWARD", "forward")
+            self.emitter.emit_line(f"sprite.looks.change_layer('{direction}', {self._resolve_input(block, 'NUM')})", block_id, opcode)
         
         # ==========================================
         # 5. SOUND
@@ -455,6 +493,14 @@ class ProjectTranslator:
             self.emitter.emit_line(f"sprite.volume += {self._resolve_input(block, 'VOLUME')}", block_id, opcode)
         elif opcode == "sound_setvolumeto":
             self.emitter.emit_line(f"sprite.volume = {self._resolve_input(block, 'VOLUME')}", block_id, opcode)
+        elif opcode == "sound_changeeffectby":
+            effect = self._get_field(block, "EFFECT", "pitch")
+            self.emitter.emit_line(f"sprite.sound.change_effect('{effect}', {self._resolve_input(block, 'VALUE')})", block_id, opcode)
+        elif opcode == "sound_seteffectto":
+            effect = self._get_field(block, "EFFECT", "pitch")
+            self.emitter.emit_line(f"sprite.sound.set_effect('{effect}', {self._resolve_input(block, 'VALUE')})", block_id, opcode)
+        elif opcode == "sound_cleareffects":
+            self.emitter.emit_line("sprite.sound.clear_effects()", block_id, opcode)
 
         # ==========================================
         # 6. SENSING (Action blocks)
@@ -556,8 +602,11 @@ class ProjectTranslator:
         # UNSUPPORTED FALLBACK
         # ==========================================
         else:
-            self.emitter.add_warning(f"Unsupported block type: {opcode}")
-            self.emitter.emit_line(f"# TODO: Translate '{opcode}'", block_id, opcode, "This block is not fully supported yet.")
+            if self._evaluate_reporter(block_id) != "None":
+                self.emitter.emit_line(f"# Ignored floating reporter block: {opcode}", block_id, opcode)
+            else:
+                self.emitter.add_warning(f"Unsupported block type: {opcode}")
+                self.emitter.emit_line(f"# TODO: Translate '{opcode}'", block_id, opcode, "This block is not fully supported yet.")
 
     def _handle_substack(self, block: ScratchBlock, input_key: str):
         """Helper to traverse nested code blocks within control structures like 'if' and 'repeat'."""
