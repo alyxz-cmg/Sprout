@@ -9,11 +9,7 @@ export default function UploadCard({ onFileSelect, status }: UploadCardProps) {
   const isLoading = status === "converting" || status === "explaining";
 
   return (
-    <div className="bg-white p-8 rounded-2xl shadow-sm border border-green-100 text-center">
-      <h2 className="text-xl font-semibold mb-6 text-gray-800">
-        Upload your Scratch Project (.sb3)
-      </h2>
-      
+    <div className="bg-white p-8 rounded-2xl shadow-sm border border-green-100 text-center">   
       <FileDropzone onFileSelect={onFileSelect} disabled={isLoading} />
       
       {status === "converting" && (
