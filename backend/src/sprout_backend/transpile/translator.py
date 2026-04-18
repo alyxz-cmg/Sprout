@@ -16,6 +16,7 @@ class ProjectTranslator:
         self.section_counter = 0
 
     def translate(self) -> Dict[str, Any]:
+        self.emitter.emit_line("import math", "meta", "import")
         self.emitter.emit_line("import time", "meta", "import", "Imported for wait blocks.")
         self.emitter.emit_line("import random", "meta", "import", "Imported for math blocks.")
         self.emitter.lines.append("")
@@ -162,7 +163,31 @@ class ProjectTranslator:
             return f"f'{{{self._resolve_input(block, 'STRING1').strip(chr(34))}}}{{{self._resolve_input(block, 'STRING2').strip(chr(34))}}}'"
         elif opcode == "operator_length":
             return f"len(str({self._resolve_input(block, 'STRING')}))"
+        elif opcode == "operator_mod":
+            return f"({self._resolve_input(block, 'NUM1')} % {self._resolve_input(block, 'NUM2')})"
+        elif opcode == "operator_round":
+            return f"round({self._resolve_input(block, 'NUM')})"
+        elif opcode == "operator_mathop":
+            op = self._get_field(block, "OPERATOR").lower()
+            val = self._resolve_input(block, "NUM")
 
+            mapping = {
+                "abs": f"abs({val})",
+                "sqrt": f"({val})**0.5",
+                "sin": f"math.sin({val})",
+                "cos": f"math.cos({val})",
+                "tan": f"math.tan({val})",
+                "asin": f"math.asin({val})",
+                "acos": f"math.acos({val})",
+                "atan": f"math.atan({val})",
+                "ln": f"math.log({val})",
+                "log": f"math.log10({val})",
+                "e ^": f"math.exp({val})",
+                "10 ^": f"(10 ** {val})"
+            }
+
+            return mapping.get(op, val)
+        
         # --- SENSING ---
         elif opcode == "sensing_touchingobject":
             return f"sprite.sensing.is_touching({self._resolve_input(block, 'TOUCHINGOBJECTMENU')})"
@@ -184,6 +209,7 @@ class ProjectTranslator:
             return f"list_{self._sanitize_name(self._get_field(block, 'LIST'))}[{self._resolve_input(block, 'INDEX')} - 1]"
         elif opcode == "data_lengthoflist":
             return f"len(list_{self._sanitize_name(self._get_field(block, 'LIST'))})"
+        
         elif opcode == "motion_xposition":
             return "sprite.x"
         elif opcode == "motion_yposition":
@@ -275,7 +301,14 @@ class ProjectTranslator:
             self.emitter.indent()
         elif opcode == "control_delete_this_clone":
             self.emitter.emit_line("sprite.control.delete_clone()", block_id, opcode)
+        elif opcode == "control_stopall":
+            self.emitter.emit_line("raise SystemExit()", block_id, opcode)
+        elif opcode == "control_stopthisscript":
+            self.emitter.emit_line("return", block_id, opcode)
 
+        elif opcode == "control_stopotherscripts":
+            self.emitter.emit_line("# TODO: stop other scripts not implemented", block_id, opcode)
+        
         # ==========================================
         # 3. MOTION
         # ==========================================
@@ -327,7 +360,19 @@ class ProjectTranslator:
             self.emitter.emit_line(f"sprite.size = {self._resolve_input(block, 'SIZE')}", block_id, opcode)
         elif opcode == "looks_cleargraphiceffects":
             self.emitter.emit_line("sprite.looks.clear_effects()", block_id, opcode)
-
+        elif opcode == "looks_switchbackdropto":
+            self.emitter.emit_line(f"stage.looks.switch_backdrop({self._resolve_input(block, 'BACKDROP')})", block_id, opcode)
+        elif opcode == "looks_nextbackdrop":
+            self.emitter.emit_line("stage.looks.next_backdrop()", block_id, opcode)
+        elif opcode == "looks_changeeffectby":
+            effect = self._get_field(block, "EFFECT")
+            val = self._resolve_input(block, "CHANGE")
+            self.emitter.emit_line(f"sprite.looks.change_effect('{effect}', {val})", block_id, opcode)
+        elif opcode == "looks_seteffectto":
+            effect = self._get_field(block, "EFFECT")
+            val = self._resolve_input(block, "VALUE")
+            self.emitter.emit_line(f"sprite.looks.set_effect('{effect}', {val})", block_id, opcode)
+        
         # ==========================================
         # 5. SOUND
         # ==========================================
@@ -349,7 +394,23 @@ class ProjectTranslator:
             self.emitter.emit_line(f"sprite.sensing.ask_and_wait({self._resolve_input(block, 'QUESTION')})", block_id, opcode)
         elif opcode == "sensing_resettimer":
             self.emitter.emit_line("sprite.sensing.reset_timer()", block_id, opcode)
-
+        elif opcode == "sensing_keypressed":
+            return f"sprite.sensing.key_pressed({self._resolve_input(block, 'KEY_OPTION')})"
+        elif opcode == "sensing_touchingcolor":
+            return f"sprite.sensing.touching_color({self._resolve_input(block, 'COLOR')})"
+        elif opcode == "sensing_coloristouchingcolor":
+            return f"sprite.sensing.color_touching_color({self._resolve_input(block, 'COLOR')}, {self._resolve_input(block, 'COLOR2')})"
+        elif opcode == "sensing_distanceto":
+            return f"sprite.sensing.distance_to({self._resolve_input(block, 'DISTANCETOMENU')})"
+        elif opcode == "sensing_loudness":
+            return "sprite.sensing.loudness()"
+        elif opcode == "sensing_dayssince2000":
+            return "sprite.sensing.days_since_2000()"
+        elif opcode == "sensing_current":
+            return f"sprite.sensing.current('{self._get_field(block, 'CURRENTMENU')}')"
+        elif opcode == "sensing_username":
+            return "sprite.sensing.username"
+        
         # ==========================================
         # 7. VARIABLES & LISTS
         # ==========================================
