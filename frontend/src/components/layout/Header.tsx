@@ -47,7 +47,7 @@ export default function Header() {
             {/* Modal Body (Scrollable) */}
             <div className="p-6 overflow-y-auto bg-slate-50 rounded-b-2xl">
               <p className="text-slate-600 mb-6 font-medium">
-                Unsure of a python code block? Check out the Scratch mappings below!
+                Unsure of a Python code block? Check out the Scratch mappings below!
               </p>
 
               {/* Dynamically Rendered Dictionary List */}
