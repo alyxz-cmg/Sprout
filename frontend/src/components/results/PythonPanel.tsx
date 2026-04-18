@@ -20,7 +20,7 @@ export function PythonPanel({ code, activeSection, onHintClick }: PythonPanelPro
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // --- MAGIC CHUNKING LOGIC ---
+  // --- CHUNKING LOGIC ---
   const lines = code.split('\n');
   const chunks: any[] = [];
   let currentChunkCode: string[] = [];
@@ -30,7 +30,6 @@ export function PythonPanel({ code, activeSection, onHintClick }: PythonPanelPro
   lines.forEach((line, index) => {
     const match = line.match(/### SECTION:\s*(.*)/);
     if (match) {
-      // Save the previous code block before starting a new section
       if (currentChunkCode.length > 0) {
         chunks.push({
           type: 'code',
@@ -39,14 +38,20 @@ export function PythonPanel({ code, activeSection, onHintClick }: PythonPanelPro
           associatedSection: activeSectionForChunk
         });
       }
-      // Create the interactive section breakpoint
-      const sectionName = match[1].trim();
-      chunks.push({ type: 'section', name: sectionName });
+
+      const fullName = match[1].trim();
       
-      // Reset variables for the next code block
+      const displayName = fullName.replace(/\s*\(ID:\s*\d+\)/g, "");
+
+      chunks.push({ 
+        type: 'section', 
+        name: fullName,
+        label: displayName
+      });
+      
       currentChunkCode = [];
-      currentStartLine = index + 2; // +2 accounts for 1-indexing and the comment line itself
-      activeSectionForChunk = sectionName;
+      currentStartLine = index + 2; 
+      activeSectionForChunk = fullName;
     } else {
       currentChunkCode.push(line);
     }
@@ -58,15 +63,12 @@ export function PythonPanel({ code, activeSection, onHintClick }: PythonPanelPro
 
   return (
     <div className="flex flex-col h-full bg-[#1e1e1e] rounded-xl overflow-hidden shadow-2xl border border-[#333333]">
-      {/* Tab Bar Style */}
       <div className="bg-[#252526] px-4 py-1 flex justify-between items-center border-b border-[#1e1e1e]">
         <div className="flex items-center space-x-2 bg-[#1e1e1e] px-4 py-2 border-t border-t-[#007acc] rounded-t-sm">
           <span className="text-[#cccccc] font-mono text-xs">main.py</span>
         </div>
         
-        {/* Top Right Controls */}
         <div className="flex items-center space-x-2">
-          {/* Hide/Show Guides Toggle */}
           <button 
             onClick={() => setShowHints(!showHints)}
             className="flex items-center space-x-1.5 px-2 py-1.5 hover:bg-[#37373d] text-[#cccccc] text-xs font-medium rounded-md transition-all active:scale-95"
@@ -77,7 +79,6 @@ export function PythonPanel({ code, activeSection, onHintClick }: PythonPanelPro
 
           <div className="w-px h-4 bg-[#444] mx-1"></div>
 
-          {/* Copy Clean Code Button */}
           <button 
             onClick={copyToClipboard}
             className="flex items-center space-x-1.5 px-2 py-1.5 hover:bg-[#37373d] text-[#cccccc] text-xs font-medium rounded-md transition-all active:scale-95"
@@ -89,18 +90,16 @@ export function PythonPanel({ code, activeSection, onHintClick }: PythonPanelPro
         </div>
       </div>
 
-      {/* Code Area */}
       <div className="flex-1 overflow-auto bg-[#1e1e1e] text-sm custom-scrollbar py-4">
         {chunks.map((chunk, idx) => {
-          
-          // Render the interactive Hint Button
           if (chunk.type === 'section') {
-            if (!showHints) return null; // Completely hide the section markers if user clicked "Hide Guides"
-            
+            if (!showHints) return null;
+
             const isSelected = activeSection === chunk.name;
+
             return (
               <div key={idx} className="px-4 py-2 my-1 flex items-center">
-                 <div className="w-10"></div> {/* Spacer for line numbers */}
+                 <div className="w-10"></div>
                  <button
                    onClick={() => onHintClick && onHintClick(chunk.name)}
                    className={`flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs font-bold transition-all transform hover:scale-105 shadow-md ${
@@ -110,14 +109,13 @@ export function PythonPanel({ code, activeSection, onHintClick }: PythonPanelPro
                    }`}
                  >
                    <Lightbulb size={14} className={isSelected ? "animate-pulse text-yellow-300" : ""} />
-                   <span>Guide: {chunk.name}</span>
+                   <span>Guide: {chunk.label}</span>
                    <span className="text-[10px] opacity-70 ml-1">➔</span>
                  </button>
               </div>
             );
           }
 
-          // Render the Syntax Highlighted Code Chunk
           const isHighlighted = showHints && activeSection === chunk.associatedSection;
           
           return (
@@ -131,7 +129,7 @@ export function PythonPanel({ code, activeSection, onHintClick }: PythonPanelPro
                 startingLineNumber={chunk.startLine}
                 customStyle={{
                   margin: 0,
-                  padding: 0, // Padding removed here so the highlight spans perfectly
+                  padding: 0,
                   backgroundColor: 'transparent',
                   fontSize: '0.875rem',
                   lineHeight: '1.5',

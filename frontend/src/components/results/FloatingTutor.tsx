@@ -10,6 +10,9 @@ interface FloatingTutorProps {
 }
 
 export function FloatingTutor({ section, explanations, onClose }: FloatingTutorProps) {
+  // --- ID STRIPPING LOGIC ---
+  const displayTitle = section.replace(/\s*\(ID:\s*\d+\)/g, "");
+
   const explanation = explanations.find(
     (e) => e.section.trim().toLowerCase() === section.trim().toLowerCase()
   );
@@ -46,7 +49,7 @@ export function FloatingTutor({ section, explanations, onClose }: FloatingTutorP
         
         <h4 className="font-extrabold text-blue-800 text-lg mb-2 flex items-center gap-2">
           <span className="text-xl">💡</span>
-          {section}
+          {displayTitle}
         </h4>
         
         <div className="max-h-[40vh] overflow-y-auto custom-scrollbar pr-2">
@@ -55,9 +58,13 @@ export function FloatingTutor({ section, explanations, onClose }: FloatingTutorP
               {formatText(explanation.text)}
             </div>
           ) : (
-            <p className="text-slate-500 italic text-sm">
-              Hmm, I don't have specific advice for this part yet, but you're doing great! Keep looking at the code!
-            </p>
+            <div className="space-y-2">
+              <p className="text-slate-500 italic text-sm">
+                Hmm, I don't have specific advice for this part yet, but you're doing great! Keep looking at the code!
+              </p>
+              {/* Optional: Debug info for developers - remove in production */}
+              {/* <p className="text-[10px] text-slate-300">Searching for: {section}</p> */}
+            </div>
           )}
         </div>
       </div>

@@ -16,6 +16,13 @@ CRITICAL SECTION NAMING RULE:
 - This is CASE-SENSITIVE and must include all punctuation (like colons).
 - If the code says `### SECTION: Key Pressed: space`, your key must be `Key Pressed: space`.
 
+CRITICAL UNIQUE MATCHING RULE:
+1. Every section now has a unique name like "SpriteName - Action (ID: 123)".
+2. You MUST use that full unique string as your JSON key.
+3. IMPORTANT: Look at the code directly under that specific section. 
+   If one "Green Flag Setup" has a loop and another has a "show" block, 
+   ensure your explanation describes ONLY the blocks in that specific section.
+   
 STRICT FORMATTING RULES:
 - You must return ONLY a valid JSON object.
 - The root key must be "explanations" (plural).

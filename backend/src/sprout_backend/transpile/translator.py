@@ -13,6 +13,7 @@ class ProjectTranslator:
         self.project = project
         self.emitter = PythonEmitter()
         self.blocks: Dict[str, Union[ScratchBlock, list]] = {}
+        self.section_counter = 0
 
     def translate(self) -> Dict[str, Any]:
         self.emitter.emit_line("import time", "meta", "import", "Imported for wait blocks.")
@@ -32,7 +33,7 @@ class ProjectTranslator:
                 start_block = self.blocks.get(start_id)
 
                 if isinstance(start_block, ScratchBlock):
-                    section_name = self._generate_section_name(start_block)
+                    section_name = self._generate_section_name(start_block, target.name)
                     self.emitter.emit_line(f"### SECTION: {section_name}", "meta", "section")
 
                 sequence = build_block_sequence(start_id, self.blocks)
@@ -44,24 +45,30 @@ class ProjectTranslator:
             "mappings": self.emitter.mappings,
             "warnings": self.emitter.warnings
         }
-
-    def _generate_section_name(self, block: ScratchBlock) -> str:
-        """Determines a readable section name based on the starting block."""
+    
+    def _generate_section_name(self, block: ScratchBlock, sprite_name: str) -> str:
+        """Determines a unique, readable section name including sprite name and a unique ID."""
+        self.section_counter += 1
         opcode = block.opcode
-        if opcode == "event_whenflagclicked":
-            return "Green Flag Setup"
-        elif opcode == "event_whenkeypressed":
-            return f"Key Pressed: {self._get_field(block, 'KEY_OPTION')}"
-        elif opcode == "event_whenthisspriteclicked":
-            return "Sprite Clicked"
-        elif opcode == "event_whenbroadcastreceived":
-            return f"Message Received: {self._get_field(block, 'BROADCAST_OPTION')}"
-        elif opcode == "procedures_definition":
-            return "Custom Block Definition"
-        elif opcode == "control_start_as_clone":
-            return "Clone Startup"
-        return "General Logic"
+        base_name = ""
 
+        if opcode == "event_whenflagclicked":
+            base_name = "Green Flag Setup"
+        elif opcode == "event_whenkeypressed":
+            base_name = f"Key Pressed: {self._get_field(block, 'KEY_OPTION')}"
+        elif opcode == "event_whenthisspriteclicked":
+            base_name = "Sprite Clicked"
+        elif opcode == "event_whenbroadcastreceived":
+            base_name = f"Message Received: {self._get_field(block, 'BROADCAST_OPTION')}"
+        elif opcode == "procedures_definition":
+            base_name = "Custom Block Definition"
+        elif opcode == "control_start_as_clone":
+            base_name = "Clone Startup"
+        else:
+            base_name = "General Logic"
+
+        return f"{sprite_name} - {base_name} (ID: {self.section_counter})"
+    
     def _translate_sequence(self, sequence: list[str]):
         for block_id in sequence:
             block = self.blocks.get(block_id)
