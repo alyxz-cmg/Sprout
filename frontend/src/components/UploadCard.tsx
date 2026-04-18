@@ -20,7 +20,7 @@ export default function UploadCard({ onFileSelect, status }: UploadCardProps) {
       
       {status === "explaining" && (
         <p className="text-blue-600 mt-4 animate-pulse font-medium">
-          🦉 Writing your guide...
+          Writing your guide...
         </p>
       )}
     </div>
