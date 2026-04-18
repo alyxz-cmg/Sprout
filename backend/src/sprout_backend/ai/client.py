@@ -25,7 +25,7 @@ async def generate_explanation(translation_data: dict) -> ExplainResponse:
 
     try:
         response = await client.beta.chat.completions.parse(
-            model="gpt-4o-2024-08-06", # Using a model that supports strict structured parsing
+            model="gemini-1.5-flash", # Using a model that supports strict structured parsing
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": user_prompt}
