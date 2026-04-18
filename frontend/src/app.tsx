@@ -49,19 +49,17 @@ export default function App() {
 
   return (
     <PageShell>
-      {/* State: Idle / Loading */}
+      {/* --- IDLE & LOADING STATES --- */}
       {(appState === "idle" || appState === "converting" || appState === "explaining") && (
-        <div className="max-w-xl mx-auto w-full mt-12">
+        <div className="max-w-xl mx-auto w-full mt-12 transition-all duration-500">
           <UploadCard 
             onFileSelect={handleFileUpload} 
-            isLoading={appState === "converting" || appState === "explaining"} 
+            status={appState} 
           />
-          {appState === "converting" && <p className="text-center mt-4 text-slate-500 animate-pulse">Translating your blocks...</p>}
-          {appState === "explaining" && <p className="text-center mt-4 text-slate-500 animate-pulse">Writing your explanations...</p>}
         </div>
       )}
 
-      {/* State: Error */}
+      {/* --- ERROR STATE --- */}
       {appState === "error" && (
         <div className="bg-red-50 text-red-700 p-6 rounded-xl text-center border border-red-200 max-w-xl mx-auto w-full mt-12">
           <h2 className="text-xl font-bold mb-2">Oops! We hit a snag.</h2>
@@ -75,33 +73,42 @@ export default function App() {
         </div>
       )}
 
-      {/* State: Success */}
+      {/* --- SUCCESS STATE --- */}
       {appState === "success" && convertData && explainData && (
-        <div className="space-y-6 fade-in">
+        <div className="space-y-6 animate-in fade-in zoom-in duration-500">
+          {/* Project Header */}
           <div className="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-            <h2 className="text-xl font-bold text-green-700">Project: {convertData.project_name}</h2>
+            <div className="flex items-center space-x-3">
+              <div className="bg-green-100 p-2 rounded-lg text-green-600">
+                <span className="text-xl">🌱</span>
+              </div>
+              <h2 className="text-xl font-bold text-slate-800">
+                {convertData.project_name}
+              </h2>
+            </div>
             <button 
               onClick={resetApp}
-              className="text-sm font-semibold bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-4 rounded-lg transition-colors"
+              className="text-sm font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 py-2 px-4 rounded-lg transition-colors"
             >
               Convert Another Project
             </button>
           </div>
 
+          {/* Warnings (if any) */}
           {convertData.warnings && convertData.warnings.length > 0 && (
              <WarningBanner warnings={convertData.warnings} />
           )}
 
+          {/* Main Results Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-            {/* Left Column: Code and Mappings */}
+            {/* Left Column: VS Code Style Python Panel & Mapping */}
             <div className="space-y-6 flex flex-col h-full">
               <PythonPanel code={convertData.python_code} />
               <MappingPanel mappings={convertData.mappings} />
             </div>
 
-            {/* Right Column: Explanations */}
+            {/* Right Column: AI Explanations Guide */}
             <div className="h-full">
-               {/* Assuming ExplanationsPanel takes an array of ExplanationSections */}
               <ExplanationsPanel explanations={explainData.explanations} />
             </div>
           </div>
