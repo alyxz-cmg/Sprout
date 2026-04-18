@@ -28,6 +28,8 @@ class ProjectTranslator:
                 self.emitter.emit_line(f"# --- {sprite_type}: {target.name} ---", "meta", "comment")
                 
             for start_id in top_level_ids:
+                self.emitter.indent_level = 0
+
                 sequence = build_block_sequence(start_id, self.blocks)
                 self._translate_sequence(sequence)
                 self.emitter.lines.append("") 
@@ -177,7 +179,7 @@ class ProjectTranslator:
             self.emitter.emit_line("@event.on_sprite_clicked", block_id, opcode)
             self.emitter.emit_line("def sprite_clicked_script():", block_id, opcode)
             self.emitter.indent()
-        elif opcode == "event_whenreceive":
+        elif opcode == "event_whenbroadcastreceived":
             msg = self._get_field(block, "BROADCAST_OPTION")
             self.emitter.emit_line(f"@event.on_broadcast_received('{msg}')", block_id, opcode)
             self.emitter.emit_line(f"def receive_{self._sanitize_name(msg)}():", block_id, opcode)
