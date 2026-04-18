@@ -36,12 +36,15 @@ async def generate_explanation(translation_data: dict) -> ExplainResponse:
             if "explanation" in data and "explanations" not in data:
                 data["explanations"] = data.pop("explanation")
             
-            # Fix "title" vs "section" keys inside the list
+            # Fix keys inside the list
             if isinstance(data.get("explanations"), list):
                 for item in data["explanations"]:
                     if isinstance(item, dict):
                         if "title" in item and "section" not in item:
                             item["section"] = item.pop("title")
+                        
+                        if "text" in item and isinstance(item["text"], list):
+                            item["text"] = "\n".join(f"• {bullet}" for bullet in item["text"])
             
             # Coerce string explanations into the required list format
             if isinstance(data.get("explanations"), str):
