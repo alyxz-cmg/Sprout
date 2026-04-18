@@ -13,7 +13,7 @@ Sprout is a transcompiler and educational platform designed to bridge the gap be
 Unlike simple one-to-one mapping tools, Sprout utilizes a **Dual-Engine Architecture**:
 
 1.  **The Transpilation Engine:** A custom-built Python logic layer that parses `.sb3` files, maps Scratch's asynchronous event-driven model to Pythonic syntax, and emits clean, readable code.
-2.  **The AI Tutor Layer:** A context-aware explanation service powered by **Gemini 1.5 Flash**. It analyzes specific sections of the generated Python code to provide line-by-line, kid-friendly "hints" through an interactive "Srpout Cat" interface.
+2.  **The AI Tutor Layer:** A context-aware explanation service powered by **Gemini 2.5 Flash**. It analyzes specific sections of the generated Python code to provide line-by-line, kid-friendly "hints" through an interactive "Srpout Cat" interface.
 
 ---
 
