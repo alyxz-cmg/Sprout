@@ -10,6 +10,9 @@ Make the jump from Scratch to Python feel like leveling up in a game: easy to st
 * **Backend**: Python, FastAPI
 * **AI Layer**: OpenAI (GPT-4o) - *Strictly for educational explanations*
 
+## View Status
+https://stats.uptimerobot.com/XJcTACqmvk
+
 ## Local Development
 
 ### 1. Clone & Setup
