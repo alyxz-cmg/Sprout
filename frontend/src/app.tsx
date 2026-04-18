@@ -104,7 +104,9 @@ export default function App() {
             {/* Left Column: VS Code Style Python Panel & Mapping */}
             <div className="space-y-6 flex flex-col h-full">
               <PythonPanel code={convertData.python_code} />
-              <MappingPanel mappings={convertData.mappings} />
+              {/* COMMENTED OUT FOR NOW:
+                <MappingPanel mappings={convertData.mappings} /> 
+              */}
             </div>
 
             {/* Right Column: AI Explanations Guide */}
