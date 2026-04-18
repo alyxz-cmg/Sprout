@@ -1,12 +1,8 @@
 import { ArrowRightLeft } from "lucide-react";
-
-interface MappingItem {
-  scratchBlock: string;
-  pythonCode: string;
-}
+import type { MappingNote } from "../../types/api";
 
 interface MappingPanelProps {
-  mappings: MappingItem[];
+  mappings: MappingNote[];
 }
 
 export default function MappingPanel({ mappings }: MappingPanelProps) {
@@ -22,10 +18,11 @@ export default function MappingPanel({ mappings }: MappingPanelProps) {
         {mappings.map((map, index) => (
           <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-2 pb-4 border-b border-gray-100 last:border-0 last:pb-0">
             <div className="bg-orange-50 p-3 rounded-lg text-sm font-mono text-orange-800 flex items-center">
-              {map.scratchBlock}
+              {map.scratch_opcode}
             </div>
             <div className="bg-gray-800 p-3 rounded-lg text-sm font-mono text-green-400 whitespace-pre-wrap">
-              {map.pythonCode}
+              {/* If API puts the Python code in 'note', we display it here */}
+              {map.note}
             </div>
           </div>
         ))}
