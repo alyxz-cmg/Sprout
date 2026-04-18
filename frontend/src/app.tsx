@@ -37,6 +37,7 @@ export default function App() {
       setExplainData(explained);
 
       setAppState("success");
+      setActiveSection("welcome");
 
     } catch (error: any) {
       setAppState("error");
