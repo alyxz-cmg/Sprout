@@ -1,4 +1,4 @@
-import FileDropzone from "./upload/FileDropzone";
+import { FileDropzone } from "./upload/FileDropzone";
 
 interface UploadCardProps {
   onFileSelect: (file: File) => void;
