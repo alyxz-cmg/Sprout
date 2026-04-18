@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 origins = [
     "http://localhost:5173",
-    "https://sprout.vercel.app",
+    "https://sprout-frontend-sandy.vercel.app/",
 ]
 
 app.add_middleware(
