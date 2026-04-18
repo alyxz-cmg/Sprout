@@ -1,5 +1,6 @@
 import os
 import json
+import re
 from openai import AsyncOpenAI
 from pydantic import ValidationError
 from dotenv import load_dotenv
@@ -8,55 +9,67 @@ from ..schemas.explain import ExplainResponse
 
 load_dotenv()
 
-# Initialize the async client. It automatically picks up GEMINI_API_KEY from the environment.
 client = AsyncOpenAI(
     api_key=os.getenv("GEMINI_API_KEY"),
     base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
 )
 
 async def generate_explanation(translation_data: dict) -> ExplainResponse:
-    """
-    Sends the deterministic translation payload to Gemini and requests
-    a structured JSON response explaining the code to a child.
-    """
-    # Convert the payload to a formatted string for the prompt
     payload_str = json.dumps(translation_data, indent=2)
-    
-    # Explicitly remind the model to output raw JSON so it plays nicely
     user_prompt = f"Here is the translated Scratch project data:\n{payload_str}\n\nPlease explain this translation. Return ONLY valid JSON."
 
     try:
         response = await client.chat.completions.create(
-            model="gemini-1.5-flash",
+            model="gemini-2.5-flash",
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": user_prompt}
             ],
-            temperature=0.4 # Keep it relatively deterministic and focused
+            temperature=0.4
         )
         
         content = response.choices[0].message.content.strip()
         
-        # Strip out markdown backticks if the AI still adds them
-        if content.startswith("```json"):
-            content = content[7:-3].strip()
-        elif content.startswith("```"):
-            content = content[3:-3].strip()
+        # Helper to clean and validate the dictionary
+        def repair_and_validate(data):
+            # Fix singular/plural top-level key
+            if "explanation" in data and "explanations" not in data:
+                data["explanations"] = data.pop("explanation")
             
-        # Parse the raw string into a Python dictionary
-        parsed_data = json.loads(content)
-        
-        return ExplainResponse(**parsed_data)
+            # Fix "title" vs "section" keys inside the list
+            if isinstance(data.get("explanations"), list):
+                for item in data["explanations"]:
+                    if isinstance(item, dict):
+                        if "title" in item and "section" not in item:
+                            item["section"] = item.pop("title")
+            
+            # Coerce string explanations into the required list format
+            if isinstance(data.get("explanations"), str):
+                data["explanations"] = [{"section": "Overview", "text": data["explanations"]}]
+            
+            return ExplainResponse(**data)
+
+        # First Attempt: Try parsing the whole content
+        try:
+            # Strip markdown backticks
+            clean_content = re.sub(r'^```json\s*|```$', '', content, flags=re.MULTILINE).strip()
+            return repair_and_validate(json.loads(clean_content))
+        except (json.JSONDecodeError, ValidationError):
+            # Second Attempt: Use RegEx to find the first JSON object {} in the string
+            json_match = re.search(r'\{.*\}', content, re.DOTALL)
+            if json_match:
+                try:
+                    return repair_and_validate(json.loads(json_match.group()))
+                except:
+                    pass
+
+        # Final Emergency Fallback: If it's just raw text, wrap it nicely
+        return ExplainResponse(
+            explanations=[{"section": "How it works", "text": content}]
+        )
     
     except Exception as e:
-        print(f"🔥 AI GENERATION ERROR: {e}")
-        
-        # Fallback if the AI fails, so the app doesn't crash entirely for the user
+        print(f"🔥 CRITICAL ERROR: {e}")
         return ExplainResponse(
-            explanations=[
-                {
-                    "section": "Oops!",
-                    "text": "I had a little trouble generating an explanation right now, but your Python code is ready above! Keep exploring."
-                }
-            ]
+            explanations=[{"section": "Oops!", "text": "Something went wrong. But look at that code!"}]
         )
