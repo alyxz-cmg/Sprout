@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "/backend/api/index.py"
+      "destination": "/backend/src/sprout_backend/api/index.py"
     },
     {
       "source": "/(.*)",
