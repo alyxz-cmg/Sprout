@@ -62,9 +62,9 @@ export function PythonPanel({ code, activeSection, onHintClick }: PythonPanelPro
   }
 
   return (
-    <div className="flex flex-col h-full bg-[#1e1e1e] rounded-xl overflow-hidden shadow-2xl border border-[#333333]">
-      <div className="bg-[#252526] px-4 py-1 flex justify-between items-center border-b border-[#1e1e1e]">
-        <div className="flex items-center space-x-2 bg-[#1e1e1e] px-4 py-2 border-t border-t-[#007acc] rounded-t-sm">
+    <div className="flex flex-col h-full bg-[#1e1e1e]/90 backdrop-blur-md rounded-xl overflow-hidden shadow-2xl border border-white/20">
+      <div className="bg-[#252526]/80 px-4 py-1 flex justify-between items-center border-b border-white/10">
+        <div className="flex items-center space-x-2 bg-[#1e1e1e]/80 px-4 py-2 border-t border-t-[#007acc] rounded-t-sm">
           <span className="text-[#cccccc] font-mono text-xs">main.py</span>
         </div>
         
@@ -90,7 +90,7 @@ export function PythonPanel({ code, activeSection, onHintClick }: PythonPanelPro
         </div>
       </div>
 
-      <div className="flex-1 overflow-auto bg-[#1e1e1e] text-sm custom-scrollbar py-4">
+      <div className="flex-1 overflow-auto bg-transparent text-sm custom-scrollbar py-4">
         {chunks.map((chunk, idx) => {
           if (chunk.type === 'section') {
             if (!showHints) return null;
