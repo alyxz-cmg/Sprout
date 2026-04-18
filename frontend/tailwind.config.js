@@ -5,7 +5,18 @@ export default {
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        vscode: {
+          bg: '#1e1e1e',
+          sidebar: '#252526',
+          tabActive: '#1e1e1e',
+          accent: '#007acc',
+          border: '#333333',
+          text: '#cccccc'
+        }
+      }
+    },
   },
   plugins: [],
 }
