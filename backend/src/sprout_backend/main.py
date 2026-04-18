@@ -28,7 +28,7 @@ async def sprout_exception_handler(request: Request, exc: SproutBaseException):
     )
 
 # Basic health check endpoint
-@app.get("/health", methods=["GET", "HEAD"])
+@app.api_route("/health", methods=["GET", "HEAD"])
 def health_check():
     return {"status": "ok", "message": "Sprout API is ready to grow!"}
 
