@@ -18,6 +18,7 @@ export default function App() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [convertData, setConvertData] = useState<ConvertResponse | null>(null);
   const [explainData, setExplainData] = useState<ExplainResponse | null>(null);
+  const [activeSection, setActiveSection] = useState<string | null>(null);
 
   const handleFileUpload = async (file: File) => {
     try {
@@ -45,6 +46,7 @@ export default function App() {
     setConvertData(null);
     setExplainData(null);
     setErrorMessage(null);
+    setActiveSection(null);
   };
 
   return (
@@ -75,7 +77,7 @@ export default function App() {
 
       {/* --- SUCCESS STATE --- */}
       {appState === "success" && convertData && explainData && (
-        <div className="space-y-6 animate-in fade-in zoom-in duration-500">
+        <div className="space-y-6 animate-in fade-in zoom-in duration-500 relative">
           {/* Project Header */}
           <div className="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-gray-100">
             <div className="flex items-center space-x-3">
@@ -99,21 +101,36 @@ export default function App() {
              <WarningBanner warnings={convertData.warnings} />
           )}
 
-          {/* Main Results Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-            {/* Left Column: VS Code Style Python Panel & Mapping */}
-            <div className="space-y-6 flex flex-col h-full">
-              <PythonPanel code={convertData.python_code} />
+          {/* Main Results Container (Full Width Now!) */}
+          <div className="w-full items-start pb-32"> {/* Added pb-32 so the cat doesn't cover code at the bottom */}
+            {/* Full Width Python Panel */}
+            <div className="w-full flex flex-col h-full">
+              <PythonPanel 
+                code={convertData.python_code} 
+                // Will wire this up next
+                // onHintClick={(section) => setActiveSection(section)}
+              />
+              
               {/* COMMENTED OUT FOR NOW:
                 <MappingPanel mappings={convertData.mappings} /> 
               */}
             </div>
 
-            {/* Right Column: AI Explanations Guide */}
-            <div className="h-full">
+            {/* COMMENTED OUT FOR NOW:
+            <div className="h-full mt-6">
               <ExplanationsPanel explanations={explainData.explanations} />
             </div>
+            */}
           </div>
+
+          {/* Floating Tutor will go here */}
+          {/* {activeSection && (
+            <FloatingTutor 
+              section={activeSection} 
+              explanations={explainData.explanations} 
+              onClose={() => setActiveSection(null)} 
+            />
+          )} */}
         </div>
       )}
     </PageShell>

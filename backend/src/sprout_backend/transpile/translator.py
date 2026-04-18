@@ -28,7 +28,12 @@ class ProjectTranslator:
                 self.emitter.emit_line(f"# --- {sprite_type}: {target.name} ---", "meta", "comment")
                 
             for start_id in top_level_ids:
-                self.emitter.indent_level = 0
+                self.emitter.current_indent = 0
+                start_block = self.blocks.get(start_id)
+
+                if isinstance(start_block, ScratchBlock):
+                    section_name = self._generate_section_name(start_block)
+                    self.emitter.emit_line(f"### SECTION: {section_name}", "meta", "section")
 
                 sequence = build_block_sequence(start_id, self.blocks)
                 self._translate_sequence(sequence)
@@ -39,6 +44,23 @@ class ProjectTranslator:
             "mappings": self.emitter.mappings,
             "warnings": self.emitter.warnings
         }
+
+    def _generate_section_name(self, block: ScratchBlock) -> str:
+        """Determines a readable section name based on the starting block."""
+        opcode = block.opcode
+        if opcode == "event_whenflagclicked":
+            return "Green Flag Setup"
+        elif opcode == "event_whenkeypressed":
+            return f"Key Pressed: {self._get_field(block, 'KEY_OPTION')}"
+        elif opcode == "event_whenthisspriteclicked":
+            return "Sprite Clicked"
+        elif opcode == "event_whenbroadcastreceived":
+            return f"Message Received: {self._get_field(block, 'BROADCAST_OPTION')}"
+        elif opcode == "procedures_definition":
+            return "Custom Block Definition"
+        elif opcode == "control_start_as_clone":
+            return "Clone Startup"
+        return "General Logic"
 
     def _translate_sequence(self, sequence: list[str]):
         for block_id in sequence:
