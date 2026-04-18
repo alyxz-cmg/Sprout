@@ -28,19 +28,30 @@
 
 /* --- Theming & Background Layers --- */
 .theme-sprout {
-  --theme-base-color: #f1f8e9;
-
+  --theme-base-color: #a3e635;
+  
+  position: relative;
+  z-index: 0;
+  
   background-color: var(--theme-base-color);
+  background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.1) 100%);
+  background-attachment: fixed;
+  background-size: 100% 100%;
+}
 
-  background-image: 
-    linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0) 100%),
-    url('./assets/bg-pattern.jpg');
-    
-  background-repeat: no-repeat, repeat;
-  background-attachment: fixed, fixed;
-  background-size: 100% 100%, 350px 350px;
+.theme-sprout::before {
+  content: "";
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: -1;
+  pointer-events: none;
 
-  background-blend-mode: normal, multiply;
+  background-image: url('./assets/bg-pattern.jpg');
+  background-repeat: repeat;
+  background-size: 350px 350px;
 
-  transition: background-color 0.5s ease;
+  filter: grayscale(100%) contrast(1.2);
+  mix-blend-mode: multiply;
+
+  opacity: 0.15; 
 }
