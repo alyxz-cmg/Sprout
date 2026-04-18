@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
-import { Copy, Check } from "lucide-react"; // Assuming you have lucide-react from your tree
+import { Copy, Check } from "lucide-react";
 
 interface PythonPanelProps {
   code: string;
