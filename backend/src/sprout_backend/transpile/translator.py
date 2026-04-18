@@ -383,6 +383,9 @@ class ProjectTranslator:
             self.emitter.emit_line(f"sprite.motion.turn_left({self._resolve_input(block, 'DEGREES')})", block_id, opcode)
         elif opcode == "motion_pointindirection":
             self.emitter.emit_line(f"sprite.direction = {self._resolve_input(block, 'DIRECTION')}", block_id, opcode)
+        elif opcode == "motion_goto":
+            target = self._resolve_input(block, "TO", '"_random_"')
+            self.emitter.emit_line(f"sprite.motion.go_to(target={target})", block_id, opcode)
         elif opcode == "motion_gotoxy":
             self.emitter.emit_line(f"sprite.motion.go_to(x={self._resolve_input(block, 'X')}, y={self._resolve_input(block, 'Y')})", block_id, opcode)
         elif opcode == "motion_glidesecstoxy":
@@ -397,6 +400,9 @@ class ProjectTranslator:
             self.emitter.emit_line(f"sprite.y += {self._resolve_input(block, 'DY')}", block_id, opcode)
         elif opcode == "motion_ifonedgebounce":
             self.emitter.emit_line("sprite.motion.bounce_if_on_edge()", block_id, opcode)
+        elif opcode == "motion_setrotationstyle":
+            style = self._quote_literal(self._get_field(block, "STYLE", "all around"))
+            self.emitter.emit_line(f"sprite.rotation_style = {style}", block_id, opcode)
 
         # ==========================================
         # 4. LOOKS
@@ -457,6 +463,10 @@ class ProjectTranslator:
             self.emitter.emit_line(f"sprite.sensing.ask_and_wait({self._resolve_input(block, 'QUESTION')})", block_id, opcode)
         elif opcode == "sensing_resettimer":
             self.emitter.emit_line("sprite.sensing.reset_timer()", block_id, opcode)
+        elif opcode == "sensing_setdragmode":
+            drag_mode = self._get_field(block, "DRAG_MODE", "not draggable").lower()
+            is_draggable = "True" if drag_mode == "draggable" else "False"
+            self.emitter.emit_line(f"sprite.draggable = {is_draggable}", block_id, opcode)
         # ==========================================
         # 7. VARIABLES & LISTS
         # ==========================================

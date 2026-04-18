@@ -232,6 +232,62 @@ def test_broadcast_and_wait_avoids_invalid_await_in_sync_code():
     assert any("Broadcast-and-wait" in warning for warning in result["warnings"])
 
 
+def test_motion_goto_uses_menu_target_literal():
+    menu = make_block(
+        "menu1",
+        "motion_goto_menu",
+        fields={"TO": ["_random_", None]},
+    )
+    block = make_block(
+        "b1",
+        "motion_goto",
+        inputs={"TO": [1, "menu1"]},
+    )
+
+    target = DummyTarget("Sprite1", False, {"b1": block, "menu1": menu})
+    project = ScratchProject(targets=[target], meta={})
+
+    translator = ProjectTranslator(project)
+    result = translator.translate()
+
+    assert 'sprite.motion.go_to(target="_random_")' in result["python_code"]
+    assert len(result["warnings"]) == 0
+
+
+def test_motion_setrotationstyle_maps_to_sprite_property():
+    block = make_block(
+        "b1",
+        "motion_setrotationstyle",
+        fields={"STYLE": ["left-right", None]},
+    )
+
+    target = DummyTarget("Sprite1", False, {"b1": block})
+    project = ScratchProject(targets=[target], meta={})
+
+    translator = ProjectTranslator(project)
+    result = translator.translate()
+
+    assert 'sprite.rotation_style = "left-right"' in result["python_code"]
+    assert len(result["warnings"]) == 0
+
+
+def test_sensing_setdragmode_maps_to_sprite_draggable_flag():
+    block = make_block(
+        "b1",
+        "sensing_setdragmode",
+        fields={"DRAG_MODE": ["draggable", None]},
+    )
+
+    target = DummyTarget("Sprite1", False, {"b1": block})
+    project = ScratchProject(targets=[target], meta={})
+
+    translator = ProjectTranslator(project)
+    result = translator.translate()
+
+    assert "sprite.draggable = True" in result["python_code"]
+    assert len(result["warnings"]) == 0
+
+
 def test_procedure_call_uses_block_mutation_metadata():
     block = make_block(
         "b1",
