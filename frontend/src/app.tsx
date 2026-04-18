@@ -10,9 +10,6 @@ import { PythonPanel } from "./components/results/PythonPanel";
 import { WarningBanner } from "./components/results/WarningBanner";
 import { FloatingTutor } from "./components/results/FloatingTutor";
 
-// import { ExplanationsPanel } from "./components/results/ExplanationsPanel";
-// import MappingPanel from "./components/results/MappingPanel";
-
 type AppState = "idle" | "converting" | "explaining" | "success" | "error";
 
 export default function App() {
@@ -101,19 +98,16 @@ export default function App() {
             </button>
           </div>
 
-          {/* Warnings (if any) */}
-          {convertData.warnings && convertData.warnings.length > 0 && (
-             <WarningBanner warnings={convertData.warnings} />
-          )}
-
-          {/* Main Results Container */}
           <div className="w-full items-start pb-32"> 
-            <div className="w-full flex flex-col h-full">
+            <div className="w-full flex flex-col h-full space-y-6">
               <PythonPanel 
                 code={convertData.python_code} 
                 activeSection={activeSection}
                 onHintClick={(section) => setActiveSection(section)}
               />
+              {convertData.warnings && convertData.warnings.length > 0 && (
+                <WarningBanner warnings={convertData.warnings} />
+              )}
             </div>
           </div>
 
