@@ -2,11 +2,17 @@ import os
 import json
 from openai import AsyncOpenAI
 from pydantic import ValidationError
+from dotenv import load_dotenv
 from .prompts import SYSTEM_PROMPT
 from ..schemas.explain import ExplainResponse
 
+
+load_dotenv()
 # Initialize the async client. It automatically picks up OPENAI_API_KEY from the environment.
-client = AsyncOpenAI()
+client = AsyncOpenAI(
+    api_key=os.getenv("GEMINI_API_KEY"),
+    base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
+)
 
 async def generate_explanation(translation_data: dict) -> ExplainResponse:
     """
