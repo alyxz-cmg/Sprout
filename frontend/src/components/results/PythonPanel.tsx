@@ -133,9 +133,16 @@ export function PythonPanel({ code, activeSection, onHintClick }: PythonPanelPro
                   backgroundColor: 'transparent',
                   fontSize: '0.875rem',
                   lineHeight: '1.5',
+                  textAlign: 'left',
                 }}
                 showLineNumbers={true}
-                lineNumberStyle={{ minWidth: '3em', paddingRight: '1em', color: isHighlighted ? '#a0c7e8' : '#858585', textAlign: 'right' }}
+                lineNumberStyle={{ 
+                  minWidth: '3em', 
+                  paddingRight: '1em', 
+                  color: isHighlighted ? '#a0c7e8' : '#858585', 
+                  textAlign: 'right',
+                  userSelect: 'none'
+                 }}
               >
                 {chunk.code || " "} 
               </SyntaxHighlighter>

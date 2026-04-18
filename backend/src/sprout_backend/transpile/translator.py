@@ -26,8 +26,10 @@ class ProjectTranslator:
             
             if top_level_ids:
                 sprite_type = "Stage" if target.isStage else "Sprite"
+                self.emitter.current_indent = 0
+                self.emitter.lines.append("")
                 self.emitter.emit_line(f"# --- {sprite_type}: {target.name} ---", "meta", "comment")
-                
+
             for start_id in top_level_ids:
                 self.emitter.current_indent = 0
                 start_block = self.blocks.get(start_id)
