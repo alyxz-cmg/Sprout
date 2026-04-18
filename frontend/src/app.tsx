@@ -7,9 +7,11 @@ import type { ConvertResponse, ExplainResponse } from "./types/api";
 import PageShell from "./components/layout/PageShell";
 import UploadCard from "./components/UploadCard";
 import { PythonPanel } from "./components/results/PythonPanel";
-import { ExplanationsPanel } from "./components/results/ExplanationsPanel";
 import { WarningBanner } from "./components/results/WarningBanner";
-import MappingPanel from "./components/results/MappingPanel";
+import { FloatingTutor } from "./components/results/FloatingTutor";
+
+// import { ExplanationsPanel } from "./components/results/ExplanationsPanel";
+// import MappingPanel from "./components/results/MappingPanel";
 
 type AppState = "idle" | "converting" | "explaining" | "success" | "error";
 
@@ -31,6 +33,7 @@ export default function App() {
       setAppState("explaining");
       
       const explained = await explainTranslation(converted);
+      console.log("AI Explanations:", explained.explanations);
       setExplainData(explained);
 
       setAppState("success");
@@ -78,6 +81,7 @@ export default function App() {
       {/* --- SUCCESS STATE --- */}
       {appState === "success" && convertData && explainData && (
         <div className="space-y-6 animate-in fade-in zoom-in duration-500 relative">
+          
           {/* Project Header */}
           <div className="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-gray-100">
             <div className="flex items-center space-x-3">
@@ -101,36 +105,24 @@ export default function App() {
              <WarningBanner warnings={convertData.warnings} />
           )}
 
-          {/* Main Results Container (Full Width Now!) */}
-          <div className="w-full items-start pb-32"> {/* Added pb-32 so the cat doesn't cover code at the bottom */}
-            {/* Full Width Python Panel */}
+          {/* Main Results Container */}
+          <div className="w-full items-start pb-32"> 
             <div className="w-full flex flex-col h-full">
               <PythonPanel 
                 code={convertData.python_code} 
-                // Will wire this up next
-                // onHintClick={(section) => setActiveSection(section)}
+                activeSection={activeSection}
+                onHintClick={(section) => setActiveSection(section)}
               />
-              
-              {/* COMMENTED OUT FOR NOW:
-                <MappingPanel mappings={convertData.mappings} /> 
-              */}
             </div>
-
-            {/* COMMENTED OUT FOR NOW:
-            <div className="h-full mt-6">
-              <ExplanationsPanel explanations={explainData.explanations} />
-            </div>
-            */}
           </div>
 
-          {/* Floating Tutor will go here */}
-          {/* {activeSection && (
+          {activeSection && (
             <FloatingTutor 
               section={activeSection} 
               explanations={explainData.explanations} 
               onClose={() => setActiveSection(null)} 
             />
-          )} */}
+          )}
         </div>
       )}
     </PageShell>

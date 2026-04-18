@@ -1,20 +1,60 @@
 import React, { useState } from "react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
-import { Copy, Check } from "lucide-react";
+import { Copy, Check, EyeOff, Eye, Lightbulb } from "lucide-react";
 
 interface PythonPanelProps {
   code: string;
+  activeSection?: string | null;
+  onHintClick?: (section: string) => void;
 }
 
-export function PythonPanel({ code }: PythonPanelProps) {
+export function PythonPanel({ code, activeSection, onHintClick }: PythonPanelProps) {
   const [copied, setCopied] = useState(false);
+  const [showHints, setShowHints] = useState(true);
 
   const copyToClipboard = () => {
-    navigator.clipboard.writeText(code);
+    const cleanCode = code.replace(/### SECTION:.*\n?/g, '');
+    navigator.clipboard.writeText(cleanCode);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+
+  // --- MAGIC CHUNKING LOGIC ---
+  const lines = code.split('\n');
+  const chunks: any[] = [];
+  let currentChunkCode: string[] = [];
+  let currentStartLine = 1;
+  let activeSectionForChunk: string | null = null;
+
+  lines.forEach((line, index) => {
+    const match = line.match(/### SECTION:\s*(.*)/);
+    if (match) {
+      // Save the previous code block before starting a new section
+      if (currentChunkCode.length > 0) {
+        chunks.push({
+          type: 'code',
+          code: currentChunkCode.join('\n'),
+          startLine: currentStartLine,
+          associatedSection: activeSectionForChunk
+        });
+      }
+      // Create the interactive section breakpoint
+      const sectionName = match[1].trim();
+      chunks.push({ type: 'section', name: sectionName });
+      
+      // Reset variables for the next code block
+      currentChunkCode = [];
+      currentStartLine = index + 2; // +2 accounts for 1-indexing and the comment line itself
+      activeSectionForChunk = sectionName;
+    } else {
+      currentChunkCode.push(line);
+    }
+  });
+
+  if (currentChunkCode.length > 0) {
+    chunks.push({ type: 'code', code: currentChunkCode.join('\n'), startLine: currentStartLine, associatedSection: activeSectionForChunk });
+  }
 
   return (
     <div className="flex flex-col h-full bg-[#1e1e1e] rounded-xl overflow-hidden shadow-2xl border border-[#333333]">
@@ -24,32 +64,86 @@ export function PythonPanel({ code }: PythonPanelProps) {
           <span className="text-[#cccccc] font-mono text-xs">main.py</span>
         </div>
         
-        <button 
-          onClick={copyToClipboard}
-          className="p-1.5 hover:bg-[#37373d] text-[#cccccc] rounded-md transition-all active:scale-95"
-          title="Copy Code"
-        >
-          {copied ? <Check size={16} className="text-green-500" /> : <Copy size={16} />}
-        </button>
+        {/* Top Right Controls */}
+        <div className="flex items-center space-x-2">
+          {/* Hide/Show Guides Toggle */}
+          <button 
+            onClick={() => setShowHints(!showHints)}
+            className="flex items-center space-x-1.5 px-2 py-1.5 hover:bg-[#37373d] text-[#cccccc] text-xs font-medium rounded-md transition-all active:scale-95"
+          >
+            {showHints ? <EyeOff size={14} /> : <Eye size={14} />}
+            <span>{showHints ? "Hide Guides" : "Show Guides"}</span>
+          </button>
+
+          <div className="w-px h-4 bg-[#444] mx-1"></div>
+
+          {/* Copy Clean Code Button */}
+          <button 
+            onClick={copyToClipboard}
+            className="flex items-center space-x-1.5 px-2 py-1.5 hover:bg-[#37373d] text-[#cccccc] text-xs font-medium rounded-md transition-all active:scale-95"
+            title="Copy Code"
+          >
+            {copied ? <Check size={14} className="text-green-500" /> : <Copy size={14} />}
+            <span>Copy</span>
+          </button>
+        </div>
       </div>
 
       {/* Code Area */}
-      <div className="flex-1 overflow-auto bg-[#1e1e1e] text-sm custom-scrollbar">
-        <SyntaxHighlighter
-          language="python"
-          style={vscDarkPlus}
-          customStyle={{
-            margin: 0,
-            padding: '1.5rem',
-            backgroundColor: 'transparent',
-            fontSize: '0.875rem',
-            lineHeight: '1.5',
-          }}
-          showLineNumbers={true}
-          lineNumberStyle={{ minWidth: '2.5em', paddingRight: '1em', color: '#858585', textAlign: 'right' }}
-        >
-          {code}
-        </SyntaxHighlighter>
+      <div className="flex-1 overflow-auto bg-[#1e1e1e] text-sm custom-scrollbar py-4">
+        {chunks.map((chunk, idx) => {
+          
+          // Render the interactive Hint Button
+          if (chunk.type === 'section') {
+            if (!showHints) return null; // Completely hide the section markers if user clicked "Hide Guides"
+            
+            const isSelected = activeSection === chunk.name;
+            return (
+              <div key={idx} className="px-4 py-2 my-1 flex items-center">
+                 <div className="w-10"></div> {/* Spacer for line numbers */}
+                 <button
+                   onClick={() => onHintClick && onHintClick(chunk.name)}
+                   className={`flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs font-bold transition-all transform hover:scale-105 shadow-md ${
+                     isSelected 
+                       ? "bg-green-500 text-white ring-2 ring-green-300 ring-offset-2 ring-offset-[#1e1e1e]" 
+                       : "bg-[#2d2d30] text-blue-400 hover:bg-[#3e3e42] border border-[#444]"
+                   }`}
+                 >
+                   <Lightbulb size={14} className={isSelected ? "animate-pulse text-yellow-300" : ""} />
+                   <span>Guide: {chunk.name}</span>
+                   <span className="text-[10px] opacity-70 ml-1">➔</span>
+                 </button>
+              </div>
+            );
+          }
+
+          // Render the Syntax Highlighted Code Chunk
+          const isHighlighted = showHints && activeSection === chunk.associatedSection;
+          
+          return (
+            <div 
+              key={idx} 
+              className={`transition-colors duration-500 ${isHighlighted ? "bg-[#062f4a]/40 border-l-[3px] border-blue-500" : "border-l-[3px] border-transparent"}`}
+            >
+              <SyntaxHighlighter
+                language="python"
+                style={vscDarkPlus}
+                startingLineNumber={chunk.startLine}
+                customStyle={{
+                  margin: 0,
+                  padding: 0, // Padding removed here so the highlight spans perfectly
+                  backgroundColor: 'transparent',
+                  fontSize: '0.875rem',
+                  lineHeight: '1.5',
+                }}
+                showLineNumbers={true}
+                lineNumberStyle={{ minWidth: '3em', paddingRight: '1em', color: isHighlighted ? '#a0c7e8' : '#858585', textAlign: 'right' }}
+              >
+                {chunk.code || " "} 
+              </SyntaxHighlighter>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
