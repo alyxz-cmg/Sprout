@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import Confetti from "react-confetti";
 import { convertProject } from "./api/convert";
 import { explainTranslation } from "./api/explain";
 import type { ConvertResponse, ExplainResponse } from "./types/api";
@@ -18,6 +19,17 @@ export default function App() {
   const [convertData, setConvertData] = useState<ConvertResponse | null>(null);
   const [explainData, setExplainData] = useState<ExplainResponse | null>(null);
   const [activeSection, setActiveSection] = useState<string | null>(null);
+const [recycleConfetti, setRecycleConfetti] = useState(false);
+
+  useEffect(() => {
+    if (appState === "success") {
+      setRecycleConfetti(true); // Start the confetti cannon
+      const timer = setTimeout(() => setRecycleConfetti(false), 1500);
+      return () => clearTimeout(timer);
+    } else {
+      setRecycleConfetti(false);
+    }
+  }, [appState]);
 
   const handleFileUpload = async (file: File) => {
     try {
@@ -30,7 +42,6 @@ export default function App() {
       setAppState("explaining");
       
       const explained = await explainTranslation(converted);
-      console.log("AI Explanations:", explained.explanations);
       setExplainData(explained);
 
       setAppState("success");
@@ -52,6 +63,19 @@ export default function App() {
 
   return (
     <PageShell>
+      {/* --- Confetti Component --- */}
+      {appState === "success" && (
+        <div className="fixed inset-0 z-[100] pointer-events-none">
+          <Confetti 
+            width={window.innerWidth} 
+            height={window.innerHeight} 
+            recycle={recycleConfetti}
+            numberOfPieces={120}
+            gravity={0.2}
+          />
+        </div>
+      )}
+
       {/* --- IDLE & LOADING STATES --- */}
       {(appState === "idle" || appState === "converting" || appState === "explaining") && (
         <div className="max-w-xl mx-auto w-full mt-12 transition-all duration-500">

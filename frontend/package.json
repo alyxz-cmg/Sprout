@@ -12,6 +12,7 @@
     "@types/react-syntax-highlighter": "^15.5.13",
     "lucide-react": "^0.400.0",
     "react": "^19.0.0",
+    "react-confetti": "^6.4.0",
     "react-dom": "^19.0.0",
     "react-syntax-highlighter": "^16.1.1"
   },

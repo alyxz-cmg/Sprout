@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
-import { Copy, Check, EyeOff, Eye, Lightbulb } from "lucide-react";
+import { Copy, Check, EyeOff, Eye, Lightbulb, Download } from "lucide-react";
 
 interface PythonPanelProps {
   code: string;
@@ -18,6 +18,23 @@ export function PythonPanel({ code, activeSection, onHintClick }: PythonPanelPro
     navigator.clipboard.writeText(cleanCode);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  // --- Download Logic ---
+  const downloadCode = () => {
+    const cleanCode = code.replace(/### SECTION:.*\n?/g, '');
+    const blob = new Blob([cleanCode], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'sprout_project.py';
+    document.body.appendChild(link);
+    link.click();
+    
+    // Cleanup
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   // --- CHUNKING LOGIC ---
@@ -40,7 +57,6 @@ export function PythonPanel({ code, activeSection, onHintClick }: PythonPanelPro
       }
 
       const fullName = match[1].trim();
-      
       const displayName = fullName.replace(/\s*\(ID:\s*\d+\)/g, "");
 
       chunks.push({ 
@@ -69,6 +85,7 @@ export function PythonPanel({ code, activeSection, onHintClick }: PythonPanelPro
         </div>
         
         <div className="flex items-center space-x-2">
+          {/* Hide/Show Guides Button */}
           <button 
             onClick={() => setShowHints(!showHints)}
             className="flex items-center space-x-1.5 px-2 py-1.5 hover:bg-[#37373d] text-[#cccccc] text-xs font-medium rounded-md transition-all active:scale-95"
@@ -79,13 +96,33 @@ export function PythonPanel({ code, activeSection, onHintClick }: PythonPanelPro
 
           <div className="w-px h-4 bg-[#444] mx-1"></div>
 
+          {/* Copy Button */}
           <button 
             onClick={copyToClipboard}
-            className="flex items-center space-x-1.5 px-2 py-1.5 hover:bg-[#37373d] text-[#cccccc] text-xs font-medium rounded-md transition-all active:scale-95"
+            className="flex items-center space-x-1.5 px-2 py-1.5 hover:bg-[#37373d] text-[#cccccc] text-xs font-medium rounded-md transition-all active:scale-95 w-[76px] justify-center"
             title="Copy Code"
           >
-            {copied ? <Check size={14} className="text-green-500" /> : <Copy size={14} />}
-            <span>Copy</span>
+            {copied ? (
+              <>
+                <Check size={14} className="text-green-500" />
+                <span className="text-green-500">Copied!</span>
+              </>
+            ) : (
+              <>
+                <Copy size={14} />
+                <span>Copy</span>
+              </>
+            )}
+          </button>
+
+          {/* NEW: Download Button */}
+          <button 
+            onClick={downloadCode}
+            className="flex items-center space-x-1.5 px-2 py-1.5 hover:bg-green-600/30 text-green-400 border border-green-500/30 text-xs font-bold rounded-md transition-all active:scale-95 ml-1"
+            title="Download Python File"
+          >
+            <Download size={14} />
+            <span>Download</span>
           </button>
         </div>
       </div>
